@@ -9,9 +9,7 @@ metadata:
 spec:
   ports:
     - port: 3306
-  ##
-  # Create service selector labels here
-  ##
+
   selector:
     app: wordpress
     tier: mysql
@@ -21,11 +19,9 @@ kind: ConfigMap
 metadata:
   name: wordpress-mysql
 data:
-  ##
-  # create non-sensative data attributes
-  ##
-  database: "wordpress"
-  user:     "wordpress"
+
+  database: 'wordpress'
+  user: 'wordpress'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -35,17 +31,13 @@ metadata:
     app: wordpress
     tier: mysql
 spec:
-  ##
-  # Create app label selectors here
-  ##
+
   selector:
     matchLabels:
       app: wordpress
       tier: mysql
   template:
-    ##
-    # Create metadata labels here
-    ##
+
     metadata:
       labels:
         app: wordpress
@@ -54,49 +46,41 @@ spec:
       containers:
       - image: mysql:8.0
         name: mysql
-        
         env:
+
         - name: MYSQL_DATABASE
           valueFrom:
             configMapKeyRef:
               name: wordpress-mysql
-              key:  database
+              key: database
         - name: MYSQL_USER
           valueFrom:
             configMapKeyRef:
               name: wordpress-mysql
-              key:  user
+              key: user
+
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               name: database
-              key:  root-password
+              key: root-password
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: database
-              key:  user-password
+              key: user-password
+        ports:
+        - containerPort: 3306
+          name: mysql
 
-              ports:
-              - containerPort: 3306
-                name: mysql
-      ##
-      # define volume mounts here, be sure to reference
-      # the PVC in your container spec
-      ##
-      volumeMounts:
-        - name: mysql-pv-storage
+        volumeMounts:
+        - name: mysql-volume
           mountPath: /var/lib/mysql
       volumes:
-        - name: mysql-pv-storage
-          persistentVolumeClaim:
-            claimName: mysql-pv-claim
-
-
+      - name: mysql-volume
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
 ---
-##
-# Create persistent volume claim here
-##
 
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -111,4 +95,3 @@ spec:
   resources:
     requests:
       storage: 1Gi
-
